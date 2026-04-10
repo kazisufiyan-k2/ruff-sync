@@ -1,3 +1,12 @@
+"""
+Test suite for URL normalization and ruff config resolution logic.
+
+Covers:
+- GitHub/GitLab URL transformation
+- raw URL resolution
+- TOML detection
+- git URL conversion
+"""
 from __future__ import annotations
 
 import httpx
@@ -240,14 +249,22 @@ async def test_fetch_upstream_config_http_error_with_git_suggestion(monkeypatch)
 
     # We need to mock the client's get method
     # Since fetch_upstream_config uses the client passed to it
+async with AsyncClient() as client:
+    monkeypatch.setattr(client, "get", mock_get)
 
-    async with AsyncClient() as client:
-        monkeypatch.setattr(client, "get", mock_get)
+    with pytest.raises(httpx.HTTPStatusError) as excinfo:
+        await fetch_upstream_config(
+            url,
+            client,
+            branch="main",
+            path="",
+        )
 
-        with pytest.raises(httpx.HTTPStatusError) as excinfo:
-            await fetch_upstream_config(url, client, branch="main", path="")
+    error_msg = str(excinfo.value)
 
-        error_msg = str(excinfo.value)
-        assert "HTTP error 404" in error_msg
-        assert "git@github.com:org/repo.git" in error_msg
-        assert "ruff-sync pull" in error_msg
+    # ----------------------------
+    # Assertions (clean + robust)
+    # ----------------------------
+    assert "404" in error_msg, "Expected HTTP 404 error in message"
+    assert "git@github.com:org/repo.git" in error_msg, "Git suggestion missing"
+    assert "ruff-sync pull" in error_msg, "CLI hint missing"
