@@ -59,7 +59,6 @@ def lint(ctx: Context, *, check: bool = False, unsafe_fixes: bool = False) -> No
     aliases=["types"],
 )
 def type_check(ctx: Context, *, install_types: bool = False, check: bool = False) -> None:
-    """Type check code with mypy."""
     cmds = ["mypy"]
     if install_types:
         cmds.append("--install-types")
@@ -105,7 +104,6 @@ def _get_pypi_versions() -> tuple[str | None, str | None]:
 def _get_latest_gh_release(ctx: Context) -> str | None:
     """Get the latest GitHub release tag name."""
     try:
-        # Use gh cli to get the latest tag name
         cmd = "gh release list --limit 1 --json tagName --jq '.[0].tagName'"
         result = ctx.run(cmd, hide=True)
         if result:
